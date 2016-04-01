@@ -1,19 +1,20 @@
 {
+    "name": "btesanovic/slim3frame",
     "require": {
         "slim/slim": "^3.1",
         "slim/php-view": "^2.0",
         "slim/twig-view": "^2.0",
         "zordius/lightncandy": "dev-master",
-        "projek-xyz/slim-plates": "^0.2.1",
-        "watson/bootstrap-form": "^1.0",
-        "anahkiasen/former": "4.0.*@dev"
+        "projek-xyz/slim-plates": "^0.2.1"
     },
-    "autoload":{
-            "psr-0":{"":"_libs/lib\/"},
-            "psr-4":{
-                    "Oo\\":["_apps\/oo\/models\/","_apps\/oo\/ctrl\/"],
-                    "Libslim\\":"_libs/libslim\/"
-                    }
+    "autoload": {
+        "psr-0": {
+            "": "_libs/lib\/"
+        },
+        "psr-4": {
+            "Libslim\\": "_libs/libslim\/"
         }
-    ,"include-path": ["_libs/lib/"]
+    }
+    ,
+    "include-path": ["_libs/lib/"]
 }
