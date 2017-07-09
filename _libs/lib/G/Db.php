@@ -1,5 +1,7 @@
 <?php
-
+/*
+ * MYSQLi implementation for mysql implementation look at G_Db_1.php file
+ */
 class G_Db {
 
     static private $dbLink = null;
@@ -11,8 +13,8 @@ class G_Db {
     static public $dbTimer = 0;
 
     static function setDbLink($link) {
-        if (!is_resource($link))
-            throw new Exception("not a valid mysql link");
+        if (!$link instanceof mysqli)
+            throw new Exception("not a valid mysqli link");
         G_Db_Conn::setConn($link);
     }
 
@@ -27,7 +29,7 @@ class G_Db {
     static function log($sql) {
         if (!self::$logfile)
             return;
-        $ts = time();
+        $ts = date('Y-m-d h:i:s');
         $line = "$ts $sql\n";
         file_put_contents(self::$logfile, $line, FILE_APPEND);
     }
@@ -50,7 +52,7 @@ class G_Db {
     }
 
     static function lastId() {
-        return mysql_insert_id(self::getConn());
+        return mysqli_insert_id(self::getConn());
     }
 
     static function getAssoc($sql, $one = false, $setKeyColumn = false) {
@@ -59,7 +61,7 @@ class G_Db {
             self::debug($sql);
         }
         self::log($sql);
-        $rs = mysql_query($sql, self::getConn());
+        $rs = mysqli_query( self::getConn() , $sql);
 
 
 
@@ -67,35 +69,35 @@ class G_Db {
         if (!$rs) {
             if (APPLICATION_ENV != 'production') {
                 // F::d($sql , 'mysql error');
-                throw new Exception($sql . ' ' . mysql_error());
-                die(mysql_error());
+                throw new Exception($sql . ' ' . mysqli_error());
+                die(mysqli_error());
             } else {
-                throw new Exception($sql . ' ' . mysql_error());
+                throw new Exception($sql . ' ' . mysqli_error());
                 die();
             }
 
             return array();
         }
-        if (!is_resource($rs)) {
+        if (!$rs instanceof mysqli_result) {
             //this is update delete or drop
             if ($rs) {
-                return mysql_affected_rows();
+                return mysqli_affected_rows();
             }
             return null;
         }
 
 
         if ($one) {
-            $row = mysql_fetch_assoc($rs);
+            $row = mysqli_fetch_assoc($rs);
             return $row;
         }
 
         if ($setKeyColumn) {
-            while ($row = mysql_fetch_assoc($rs)) {
+            while ($row = mysqli_fetch_assoc($rs)) {
                 $res[$row[$setKeyColumn]] = $row;
             }
         } else {
-            while ($row = mysql_fetch_assoc($rs)) {
+            while ($row = mysqli_fetch_assoc($rs)) {
                 $res[] = $row;
             }
         }
@@ -114,7 +116,7 @@ class G_Db {
             self::debug($sql);
         }
         self::log($sql);
-        $rs = mysql_query($sql, self::getConn());
+        $rs = mysqli_query( self::getConn() , $sql) ;
 
 
 
@@ -122,19 +124,18 @@ class G_Db {
         if (!$rs) {
             if (APPLICATION_ENV != 'production') {
                 // F::d($sql , 'mysql error');
-                throw new Exception($sql . ' ' . mysql_error());
-                die(mysql_error());
+                throw new Exception($sql . ' ' . mysqli_error(self::getConn()));
             } else {
-                throw new Exception($sql . ' ' . mysql_error());
-                die();
+                throw new Exception($sql . ' ' . mysqli_error(self::getConn()));
             }
 
             return new G_Array();
         }
-        if (!is_resource($rs)) {
+        //var_dump($rs);
+        if ( !$rs instanceof  mysqli_result) {
             //this is update delete or drop
             if ($rs) {
-                return mysql_affected_rows();
+                return mysqli_affected_rows(self::getConn());
             }
             return null;
         }
@@ -142,31 +143,31 @@ class G_Db {
 
         if ($assoc) {
             if ($one) {
-                $row = mysql_fetch_assoc($rs);
+                $row = mysqli_fetch_assoc($rs);
                 return new G_Array($row);
             }
 
             if ($setKeyColumn) {
-                while ($row = mysql_fetch_assoc($rs)) {
+                while ($row = mysqli_fetch_assoc($rs)) {
                     $res[$row[$setKeyColumn]] = new G_Array($row);
                 }
             } else {
-                while ($row = mysql_fetch_assoc($rs)) {
+                while ($row = mysqli_fetch_assoc($rs)) {
                     $res[] = new G_Array($row);
                 }
             }
         } else {
             if ($one) {
-                $row = mysql_fetch_array($rs, MYSQL_NUM);
+                $row = mysqli_fetch_array($rs, MYSQLI_NUM);
                 return new G_Array($row);
             }
 
             if ($setKeyColumn) {
-                while ($row = mysql_fetch_assoc($rs, MYSQL_NUM)) {
+                while ($row = mysqli_fetch_assoc($rs, MYSQLI_NUM)) {
                     $res[$row[$setKeyColumn]] = new G_Array($row);
                 }
             } else {
-                while ($row = mysql_fetch_assoc($rs)) {
+                while ($row = mysqli_fetch_assoc($rs)) {
                     $res[] = new G_Array($row);
                 }
             }
@@ -202,21 +203,22 @@ class G_Db {
 
         self::log($sql);
 
-        $rs = mysql_query($sql, self::getConn());
+        $rs = mysqli_query( self::getConn() , $sql);
         if (!$rs) {
-            throw new Exception($sql . ' ' . mysql_error());
-            die(mysql_error());
+            throw new Exception($sql . ' ' . mysqli_error(self::getConn()));
+            die(mysqli_error(self::getConn()));
         }
 
 
-        if (!is_resource($rs)) {
+        if (!$rs instanceof mysqli_result) {
             if (self::$dbTimer) {
                 G_Dbg::getInstance()->timerStop();
             }
             //this is update delete or drop
+            
             return $rs;
         }
-        while ($row = mysql_fetch_array($rs, MYSQL_NUM)) {
+        while ($row = mysqli_fetch_array($rs, MYSQLI_NUM)) {
             $res[] = current($row);
         }
         if (self::$dbTimer) {
@@ -258,13 +260,13 @@ class G_Db {
         self::log($sql);
 
 
-        $rs = mysql_query($sql, self::getConn());
+        $rs = mysqli_query(self::getConn() , $sql);
 
         if (!$rs) {
             if (APPLICATION_ENV != 'production') {
                 echo "$sql\n";
-                echo mysql_error();
-                throw new Exception(mysql_error());
+                echo mysqli_error();
+                throw new Exception(mysqli_error());
             } else {
                 return array();
             }
@@ -274,7 +276,7 @@ class G_Db {
         if ($unshift) {
             $res[-1] = $unshift;
         }
-        while ($row = mysql_fetch_array($rs, MYSQL_NUM)) {
+        while ($row = mysqli_fetch_array($rs, MYSQLI_NUM)) {
             $res[$row[0]] = $row[1];
         }
 
@@ -501,6 +503,22 @@ class G_Db {
         return "'" . implode("','", $arr) . "'";
     }
 
+    /**
+     * 
+     * @param type $arr [bdfield]=value ...
+     * @return string
+     */
+    public static function createOnDuplicate($arr) {
+        if (!$arr)
+            return '';
+        // cena_pdv = values(cena_pdv),naziv= values(naziv)
+        $dup=[];
+        foreach ($arr as $fld=>$val){
+            $dup[] = "$fld = values($fld)";
+        }
+        return implode(', ' , $dup);
+    }
+    
     public static function sel($table, $sel, $wh = '', $groupby = '', $order = '', $add = '') {
 
         $tb = $table;
@@ -539,10 +557,14 @@ class G_Db {
             return null;
         // Quote if not number
         if (!is_numeric($s)) {
-            $s = mysql_real_escape_string($s, self::getConn());
+            $s = mysqli_real_escape_string(self::getConn() ,$s);
             //$s = addslashes($s);
         }
         return $s;
+    }
+    
+    public static function affectedRows(){
+        return   mysqli_affected_rows(self::getConn());
     }
 
     public static function debug($sql) {
