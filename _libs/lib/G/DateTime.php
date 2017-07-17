@@ -64,6 +64,15 @@ class G_DateTime {
         
         return $dates;
     }
+    
+    static $timer=0;
+    public static function startTimer(){
+        self::$timer = time();
+    }
+    
+    public static function endTimer(){
+        return time() - self::$timer;
+    }
 
     /**
      * @static
