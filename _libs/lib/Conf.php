@@ -47,7 +47,6 @@ class Conf {
     }
     
     public static function get($name,$key=false){
-        var_dump(self::$conf);
         return self::$conf[$name];
     }
 
